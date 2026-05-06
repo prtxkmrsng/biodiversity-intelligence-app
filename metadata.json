@@ -1,0 +1,6 @@
+{
+  "name": "Biodiversity Platform",
+  "description": "App for identifying plants/animals.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
