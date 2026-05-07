@@ -3,7 +3,7 @@
 ## Overview
 This repository contains a mobile-first biodiversity intelligence platform designed for fieldworkers to capture and analyze ecological data. Built securely bridging the gap between raw web camera inputs and high-performance, on-device machine learning.
 
-**IMPORTANT NOTE FOR EVALUATOR**: 
+**IMPORTANT NOTE**: 
 This project is built as a **React Single-Page Application (SPA) using React/Vite** instead of React Native (Expo). However, it implements the exact same ML integration logic, tensor manipulation, and system architecture that would correspond to an Expo App. It runs real **on-device inference via WASM-backed TensorFlow.js**.
 
 ## 🚀 High-Level ML Architecture
