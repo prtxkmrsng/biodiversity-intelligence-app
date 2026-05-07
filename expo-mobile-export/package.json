@@ -19,7 +19,8 @@
     "react-native-fast-tflite": "^1.1.2",
     "@tensorflow/tfjs": "^4.19.0",
     "@tensorflow/tfjs-react-native": "^1.0.0",
-    "@react-native-async-storage/async-storage": "^1.23.1"
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "expo-gl": "~14.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
