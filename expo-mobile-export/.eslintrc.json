@@ -1,0 +1,26 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier"
+  ],
+  "env": {
+    "node": true,
+    "es2021": true
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    "android/",
+    "ios/",
+    ".expo/",
+    "metro.config.js"
+  ],
+  "rules": {
+    "@typescript-eslint/no-var-requires": "off",
+    "@typescript-eslint/no-unused-vars": "warn",
+    "no-undef": "off"
+  }
+}
