@@ -10,28 +10,29 @@
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.23.1",
+    "@tensorflow/tfjs": "^4.19.0",
+    "@tensorflow/tfjs-react-native": "^1.0.0",
     "expo": "~51.0.8",
+    "expo-camera": "~15.0.11",
+    "expo-file-system": "~17.0.1",
+    "expo-gl": "~14.0.2",
+    "expo-image-manipulator": "^55.0.16",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-native": "0.74.1",
-    "expo-camera": "~15.0.11",
-    "expo-file-system": "~17.0.1",
     "react-native-fast-tflite": "^1.1.2",
-    "@tensorflow/tfjs": "^4.19.0",
-    "@tensorflow/tfjs-react-native": "^1.0.0",
-    "@react-native-async-storage/async-storage": "^1.23.1",
-    "expo-gl": "~14.0.2",
     "react-native-fs": "^2.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
     "@types/react": "~18.2.45",
-    "typescript": "^5.1.3",
-    "@typescript-eslint/parser": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.2.5"
+    "prettier": "^3.2.5",
+    "typescript": "^5.1.3"
   },
   "private": true
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, SafeAreaView, ActivityIndicator, Image } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { MLPipeline, Observation } from './src/services/mlPipeline';
 
 export default function App() {
@@ -39,10 +40,16 @@ export default function App() {
     if (!cameraRef.current || !mlPipeline) return;
     setIsProcessing(true);
     try {
-      const photo = await cameraRef.current.takePictureAsync({ base64: true });
+      const photo = await cameraRef.current.takePictureAsync({ base64: false });
       if (photo) {
+        // Drop resolution down to standard ML input size natively to vastly reduce RN bridge latency.
+        const manipResult = await manipulateAsync(
+          photo.uri,
+          [{ resize: { width: 224 } }],
+          { compress: 0.8, format: SaveFormat.JPEG, base64: true }
+        );
         // Pass to the native ML inference pipeline
-        const predictions = await mlPipeline.predict(photo.uri, photo.base64);
+        const predictions = await mlPipeline.predict(manipResult.uri, manipResult.base64);
         setResults(predictions);
       }
     } catch (e) {
