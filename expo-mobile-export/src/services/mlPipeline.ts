@@ -47,30 +47,26 @@ export class MLPipeline {
     const imgTensor = decodeJpeg(rawByteData);
     const resized = tf.image.resizeBilinear(imgTensor, [224, 224]);
     
-    // Normalize pixel distribution from [0, 255] to [-1.0, 1.0]
-    const normalized = resized.div(127.5).sub(1.0);
-    
-    // Shape transformation to [1, 224, 224, 3] and strict FP32 typing
-    const batched = normalized.expandDims(0);
-    const inputArgs = batched.cast('float32');
+    // Shape transformation to [1, 224, 224, 3] and strict int32 typing (no normalization for uint8 models)
+    const batched = resized.expandDims(0);
+    const inputArgs = batched.cast('int32');
 
     // 3. Prepare payload for the Native Bridge (react-native-fast-tflite)
-    const floatArray = inputArgs.dataSync() as Float32Array;
+    // Convert int32 arrays mapped to uint8 arrays
+    const int32Array = inputArgs.dataSync();
     
     // react-native-fast-tflite requires us to pass the typed array as an underlying Uint8Array Memory Buffer
-    const inputBuffer = new Uint8Array(floatArray.buffer);
+    const inputBuffer = new Uint8Array(int32Array);
 
     // 4. Run On-Device JSI Inference
     const outputBuffer = await this.model.run([inputBuffer]);
     
     // 5. Post-Processing & Softmax Mapping
-    // Extract inference results out of native buffer back into JS land
-    const outputValues = new Float32Array(outputBuffer[0].buffer);
+    // Quantized model outputs Uint8Array values 0-255 representing 0-1 probability
+    const outputValues = outputBuffer[0];
     
-    const maxLogit = Math.max(...Array.from(outputValues));
-    const exps = Array.from(outputValues).map(x => Math.exp(x - maxLogit));
-    const sumExps = exps.reduce((a, b) => a + b, 0);
-    const probabilities = exps.map(e => e / sumExps);
+    // Softmax isn't strictly necessary for quantized model if it's already normalized, but we can do it directly
+    const probabilities = Array.from(outputValues).map(x => x / 255.0);
 
     // Filter Top K predictions
     const top5 = probabilities

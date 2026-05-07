@@ -40,7 +40,7 @@ export class MLPipeline {
     }
   }
 
-  async predict(imageSource: HTMLImageElement | HTMLVideoElement): Promise<Prediction[]> {
+  async predict(imageSource: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement): Promise<Prediction[]> {
     if (!this.model || !this.isLoaded) {
       throw new Error("Model is not initialized. Call init() first.");
     }
@@ -52,23 +52,20 @@ export class MLPipeline {
       // 2. Resize to MobileNet standard (224x224)
       const resized = tf.image.resizeBilinear(imgTensor, [224, 224]);
       
-      // 3. Normalize depending on model expectation. 
-      const normalized = resized.div(127.5).sub(1.0);
+      // 3. Keep as values 0-255 for quantized models (no normalization)
+      const batched = resized.expandDims(0);
       
-      // 4. Add batch dimension: [1, 224, 224, 3]
-      const batched = normalized.expandDims(0);
-      
-      // 5. Execute Inland Inference
-      const input = batched.cast('float32');
+      // 4. Cast to int32 (TF.js doesn't have uint8, and maps int32 to uint8 for TF Lite)
+      const input = batched.cast('int32');
       const outputTensor = this.model.predict(input);
       
-      // 6. Post-process output to extract top K
+      // 5. Post-process output to extract top K
       const data = outputTensor.dataSync(); 
       
       const predictions = Array.from(data)
         .map((score, index) => ({
           label: this.labels[index] || `Unknown (${index})`,
-          score: Math.max(0, Math.min(1, Number(score))) 
+          score: Math.max(0, Math.min(1, Number(score) / 255.0)) 
         }))
         .sort((a: any, b: any) => b.score - a.score)
         .slice(0, 5); 
