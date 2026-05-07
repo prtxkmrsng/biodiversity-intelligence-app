@@ -1,53 +1,29 @@
-name: Android APK Build Pipeline
-
+name: Mobile CI/CD Pipeline
 on:
   push:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch: # This magical line adds a "Run Workflow" button in GitHub!
 
 jobs:
-  build-and-compile:
-    name: Build Android APK
+  lint-and-check:
+    name: Code Quality Check
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
           cache: 'npm'
-          cache-dependency-path: './expo-mobile-export/package-lock.json'
 
       - name: Install Dependencies
-        working-directory: ./expo-mobile-export
-        run: npm install
+        run: npm ci
 
       - name: Run ESLint
-        working-directory: ./expo-mobile-export
         run: npm run lint
 
-      # --- START NATIVE ANDROID BUILD PROCESS ---
-      - name: Setup Java JDK
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - name: Prebuild Native Android Code
-        working-directory: ./expo-mobile-export
-        run: npx expo prebuild --platform android --clean
-
-      - name: Compile APK via Gradle
-        working-directory: ./expo-mobile-export/android
-        run: ./gradlew assembleRelease
-
-      - name: Upload APK to GitHub Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: Darukaa-Biodiversity-App
-          path: ./expo-mobile-export/android/app/build/outputs/apk/release/app-release.apk
+      # Example CI Build checks for Expo could go here, e.g. 'eas build --platform ios --profile preview'

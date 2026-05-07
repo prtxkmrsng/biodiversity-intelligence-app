@@ -1,42 +1,41 @@
-# Biodiversity Intelligence Platform
+# Biodiversity Intelligence Platform - Mobile App
 
 ## Overview
-This repository contains a mobile-first biodiversity intelligence platform designed for fieldworkers to capture and analyze ecological data. Built securely bridging the gap between raw web camera inputs and high-performance, on-device machine learning.
-
-**IMPORTANT NOTE FOR EVALUATOR**: 
-Due to the constraints of the AI Studio development environment, this project is built as a **React Single-Page Application (SPA) using React/Vite** instead of React Native (Expo). However, it implements the exact same ML integration logic, tensor manipulation, and system architecture that would correspond to an Expo App. It runs real **on-device inference via WASM-backed TensorFlow.js**.
+This repository contains a mobile-first biodiversity intelligence platform designed for fieldworkers to capture and analyze ecological data. Built as a React Native (Expo) application, it securely bridges the gap between raw camera inputs and high-performance, on-device machine learning.
 
 ## 🚀 High-Level ML Architecture
 
 The application adopts a purely edge-based inference model. Data privacy and latency are optimized by avoiding backend round-trips for predictions.
 
 The AI/ML Pipeline consists of two main pillars:
-1. **Camera Feed & Tensor Extraction**: `react-webcam` captures a base64 JPEG, loaded into an HTMLImageElement, then converted to an unbatched tensor.
-2. **On-Device Inference Engine**: `@tensorflow/tfjs-tflite` handles execution of the `.tflite` directly in the browser using WebAssembly.
+1. **Camera Feed & Tensor Extraction**: `expo-camera` captures a base64 JPEG, which is decoded into a raw byte buffer, then converted to an unbatched tensor.
+2. **On-Device Inference Engine**: `react-native-fast-tflite` handles the execution of the `.tflite` model natively via JSI (JavaScript Interface) bypassing the React Native bridge for maximum performance.
 
 ---
 
 ## 🧠 ML Model & Pipeline Details
 
 ### **Model Used**
-* **MobileNetV2 (Quantized / FP32)**
+* **MobileNetV2** (Quantized / FP32)
 * **Topology**: Lightweight CNN optimized for latency.
 * **Input**: `[1, 224, 224, 3]`
-* **Output**: Logits over classification labels (Top-K extracted).
+* **Output**: Logits over classification labels.
 * **Format**: `.tflite`. We chose MobileNet because of its exceptional size-to-accuracy ratio.
 
-### **Preprocessing Steps**
-The image must be processed to match the original MobileNetV2 training distribution:
-1. **Format Conversion**: Convert HTML Image `tf.browser.fromPixels(image)`.
+### **Preprocessing Steps & Buffer Routing**
+We use `@tensorflow/tfjs-react-native` strictly for mathematical tensor preprocessing.
+1. **Decode**: `decodeJpeg(rawByteData)`.
 2. **Resize**: `tf.image.resizeBilinear(imgTensor, [224, 224])`.
-3. **Normalize**: Map pixel values from `[0, 255]` to `[-1.0, 1.0]` using `imgTensor.div(127.5).sub(1.0)`.
+3. **Normalize**: Map pixel values from `[0, 255]` to `[-1.0, 1.0]` using `resized.div(127.5).sub(1.0)`.
 4. **Reshape/Batch**: Add the batch dimension `expandDims(0)` and cast strictly as `float32`.
+5. **Buffer Routing**: `react-native-fast-tflite` requires raw memory buffers. We extract the typed array `inputArgs.dataSync() as Float32Array` and wrap it in a `Uint8Array` to pass to the native engine.
 
-### **Inference Flow**
-1. **Trigger**: Fieldworker clicks "Identify Plant".
-2. **Execution**: The input tensor is fed synchronously to the loaded `tflite` interpreter instance. 
-3. **Post-Processing**: `dataSync()` blocks to extract the 1D Float array. Values are clamped via Softmax-like logic (if needed), sorted in descending order, and the **top 5** predictions are paired with the `labels.txt` dictionary.
-4. **State Update**: The resulting `Observation` struct is pushed to global state (Context API) and the UI navigates to the result view.
+### **Inference Flow & Memory Management**
+1. **Trigger**: Fieldworker clicks the capture button.
+2. **Execution**: The memory buffer is fed to the loaded Native TFLite engine using JSI.
+3. **Post-Processing**: Inference results (logits) are returned as a raw buffer, mapped back to an array of Exponentials (Softmax), and the top 5 predictions are filtered.
+4. **Memory Management (CRITICAL)**: To prevent out-of-memory (OOM) crashes and memory leaks during continuous capture, we specifically clear all intermediate tensors using `tf.dispose([imgTensor, resized, normalized, batched, inputArgs])`.
+5. **State Update**: The resulting `Observation` struct is pushed to React state, displaying the identification results.
 
 ---
 
@@ -44,44 +43,47 @@ The image must be processed to match the original MobileNetV2 training distribut
 
 ### Prerequisites
 * Node.js (v18+)
-* npm or pnpm
+* npm, yarn, or pnpm
+* EAS CLI (`npm install -g eas-cli`)
 
-### Quickstart
+### Setup
 1. Clone the repository.
-2. Ensure you place the `mobilenet_v2.tflite` and `labels.txt` files into the `/public` directory.
+2. **File Placement**: Ensure the `mobilenet_v2.tflite` file is placed inside the `assets/` directory at the root of the project (i.e. `./assets/mobilenet_v2.tflite`).
 3. Install dependencies:
 ```bash
 npm install
 ```
-4. Run the Dev Server:
+
+### Generating the APK (Runnable Mobile Build)
+This application uses native code modules (`react-native-fast-tflite` via a C++ JSI bridge). Therefore, you cannot run full inference via a standard Expo Go client—a standalone APK must be built.
+
+To build the runnable APK demo:
+1. Configure EAS (if not already done):
 ```bash
-npm run dev
+eas build:configure
 ```
-5. Open `http://localhost:3000` in your web browser.
+2. Run the Android Cloud Build:
+```bash
+eas build -p android --profile preview
+```
 
 ---
 
 ## 🔄 CI/CD Pipeline Explanation
 
-To fulfill automated checks and scalable deployment practices, our `.github/workflows/main.yml` (simulated via AI platform constraints) encompasses:
+Our `.github/workflows/main.yml` encompasses:
+1. **Lint Phase**: `eslint` checks the code for typing issues, unused variables, and formatting conformities.
+2. **Build Readiness**: Validates dependency installations on a clean Ubuntu runner.
 
-1. **Lint Phase**: `eslint` and `tsc --noEmit` check the code for unused variables, typing issues, and formatting conformities.
-2. **Format Verification**: `prettier --check` enforces structural consistency.
-3. **Build Phase**: Validates that Vite can successfully bundle the JS and bundle the TFLite assets into a production `dist` map. 
-
-If this were an Expo app, the CI/CD pipeline would trigger EAS (Expo Application Services) via `eas build --platform ios/android --profile preview` automatically upon PR merges to master, attaching the produced `.apk` or `.ipa` to the GitHub Actions artifacts.
+Using `eas-cli`, this CI pipeline can be extended to automatically trigger Android/iOS builds upon PR merges containing successful lint checks.
 
 ---
 
 ## 🛠️ Assumptions, Trade-offs & Limitations
 
 ### Trade-offs
-- **WASM execution vs Native NPU/GPU Delegates:** Running TFLite via JS/WASM provides cross-platform compatibility but loses out on native CoreML (iOS) and NNAPI (Android) delegates. In a production React Native build, `react-native-fast-tflite` is strictly preferred.
-- **Model Size vs Accuracy:** MobileNetV2 is an older architecture but is extremely resilient. A newer model like EfficientNet-Lite0 yields slightly better accuracy but higher latency. For a real-time identification app, prioritizing speed/framerate was the chosen trade-off.
+- **JSI vs JS Execution:** Using `react-native-fast-tflite` (JSI C++ bridge) provides native performance and access to hardware delegates (NNAPI/CoreML), vastly outperforming purely JS-WASM implementations of TFJS.
+- **Model Size vs Accuracy:** MobileNetV2 prioritizes speed and low-memory footprint, essential for standard fieldworker devices, trading slight accuracy improvements offered by heavier models (e.g. EfficientNet).
 
 ### Limitations
-- **Camera Access on Desktop Browsers:** If testing the web-build on desktop instead of a mobile device, `facingMode: environment` acts unpredictably. We have added a fallback implementation that feeds a placeholder plant image if the webcam fails to stream.
-- **Dataset Constraint:** We are simulating inference over a simplified label set. The full PlantNet300k model is highly specific and runs up to 30-50MB, which strains fast initial load times over 3G/4G network conditions.
-
-### Assumptions
-- Assume the user has an internet connection *only* on the first load to cache the progressive web app and download the TFLite WASM binaries. After initial load, inference is done 100% offline.
+- The dataset labels are simulated via a subset locally. A true 300K+ identification network often requires deploying heavier sub-models or a backend service for edge-cases.

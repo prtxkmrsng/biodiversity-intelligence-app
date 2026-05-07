@@ -24,10 +24,7 @@ export class MLPipeline {
       await tf.ready();
       
       console.log('Loading TFLite model...');
-      const modelResponse = await fetch(modelUrl);
-      if (!modelResponse.ok) throw new Error("Could not fetch " + modelUrl);
-      const modelBuffer = await modelResponse.arrayBuffer();
-      this.model = await tflite.loadTFLiteModel(modelBuffer);
+      this.model = await tflite.loadTFLiteModel(modelUrl);
       
       console.log('Loading labels...');
       const response = await fetch(labelsUrl);
