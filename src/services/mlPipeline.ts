@@ -24,7 +24,7 @@ export class MLPipeline {
       await tf.ready();
       
       console.log('Loading TFLite model...');
-      this.model = await tflite.loadTFLiteModel(modelUrl + "?v=3");
+      this.model = await tflite.loadTFLiteModel(modelUrl + "?v=4");
       
       console.log('Loading labels...');
       const response = await fetch(labelsUrl);
@@ -57,7 +57,7 @@ export class MLPipeline {
       
       // 4. Cast to int32 (TF.js doesn't have uint8, and maps int32 to uint8 for TF Lite)
       const input = batched.cast('int32');
-      const outputTensor = this.model.predict(input);
+      const outputTensor = this.model.predict(input) as tf.Tensor;
       
       // 5. Post-process output to extract top K
       const data = outputTensor.dataSync(); 

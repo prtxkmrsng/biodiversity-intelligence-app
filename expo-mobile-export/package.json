@@ -17,7 +17,7 @@
     "expo-camera": "~15.0.11",
     "expo-file-system": "~17.0.1",
     "expo-gl": "~14.0.2",
-    "expo-image-manipulator": "^13.0.5",
+    "expo-image-manipulator": "~12.0.5",
     "expo-status-bar": "~1.12.1",
     "react": "18.2.0",
     "react-native": "0.74.1",
