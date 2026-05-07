@@ -36,9 +36,18 @@ export function CaptureView() {
         img.onload = resolve; 
         img.onerror = () => reject(new Error("Failed to load image for processing."));
       });
+      
+      // Downscale using OffscreenCanvas to drastically improve TFLite web inference speed
+      const canvas = document.createElement('canvas');
+      canvas.width = 224;
+      canvas.height = 224;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+         ctx.drawImage(img, 0, 0, 224, 224);
+      }
 
       // Run inference
-      const predictions = await mlPipeline.predict(img);
+      const predictions = await mlPipeline.predict(canvas);
 
       const observation = {
         id: Math.random().toString(36).substring(2, 9),
