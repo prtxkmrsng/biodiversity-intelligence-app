@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
-# FIX 2: This silences the Node 20 deprecation warning by opting into the new runner
+# Silences the Node 20 deprecation warning
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true 
 
@@ -25,12 +25,13 @@ jobs:
         with:
           node-version: 18
           cache: 'npm'
-          # FIX 1: This tells GitHub to find the lockfile wherever it is
+          # Tells GitHub to find the lockfile wherever it is
           cache-dependency-path: '**/package-lock.json' 
 
       - name: Install Dependencies
         working-directory: ./expo-mobile-export
-        run: npm install
+        # Bypasses the strict expo-camera version mismatch
+        run: npm install --legacy-peer-deps
 
       - name: Run ESLint
         working-directory: ./expo-mobile-export
