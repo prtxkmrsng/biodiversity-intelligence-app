@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "darukaa-earth-mobile",
+    "slug": "darukaa-earth-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.darukaa.earthmobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires camera access to identify plants."
+      }
+    },
+    "android": {
+      "package": "com.darukaa.earthmobile",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Darukaa to access your camera."
+        }
+      ]
+    ]
+  }
+}
