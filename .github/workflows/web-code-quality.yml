@@ -1,4 +1,4 @@
-name: Mobile CI/CD Pipeline
+name: Web Code Quality Check
 on:
   push:
     branches: [ main, master ]
