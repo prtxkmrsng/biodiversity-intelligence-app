@@ -75,7 +75,7 @@ export class MLPipeline {
       .slice(0, 5);
 
     // Prevent memory leaks on device
-    tf.dispose([imgTensor, resized, normalized, batched, inputArgs]);
+    tf.dispose([imgTensor, resized, batched, inputArgs]);
 
     return {
       imageUri,

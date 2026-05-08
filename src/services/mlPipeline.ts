@@ -57,7 +57,15 @@ export class MLPipeline {
       
       // 4. Cast to int32 (TF.js doesn't have uint8, and maps int32 to uint8 for TF Lite)
       const input = batched.cast('int32');
-      const outputTensor = this.model.predict(input) as any;
+      let outputTensor = this.model.predict(input) as any;
+      console.log('Output Tensor:', outputTensor);
+      
+      // Some TFLite models return dictionaries if there are multiple outputs or named outputs
+      if (typeof outputTensor === 'object' && !outputTensor.dataSync) {
+        // Just grab the first available tensor
+        const keys = Object.keys(outputTensor);
+        outputTensor = outputTensor[keys[0]];
+      }
       
       // 5. Post-process output to extract top K
       const data = outputTensor.dataSync(); 
