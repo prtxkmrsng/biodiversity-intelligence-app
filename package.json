@@ -17,6 +17,7 @@
     "@tensorflow/tfjs": "^4.22.0",
     "@tensorflow/tfjs-tflite": "^0.0.1-alpha.10",
     "@vitejs/plugin-react": "^5.0.4",
+    "canvas": "^3.2.3",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",

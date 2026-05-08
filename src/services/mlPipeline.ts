@@ -52,11 +52,14 @@ export class MLPipeline {
       // 2. Resize to MobileNet standard (224x224)
       const resized = tf.image.resizeBilinear(imgTensor, [224, 224]);
       
-      // 3. Keep as values 0-255 for quantized models (no normalization)
-      const batched = resized.expandDims(0);
+      // 3. Normalize depending on model expectation. 
+      const normalized = resized.div(127.5).sub(1.0);
       
-      // 4. Cast to int32 (TF.js doesn't have uint8, and maps int32 to uint8 for TF Lite)
-      const input = batched.cast('int32');
+      // 4. Add batch dimension: [1, 224, 224, 3]
+      const batched = normalized.expandDims(0);
+      
+      // 5. Execute Inland Inference
+      const input = batched.cast('float32');
       let outputTensor = this.model.predict(input) as any;
       console.log('Output Tensor:', outputTensor);
       
@@ -67,16 +70,33 @@ export class MLPipeline {
         outputTensor = outputTensor[keys[0]];
       }
       
-      // 5. Post-process output to extract top K
+      
+      // 6. Post-process output to extract top K
       const data = outputTensor.dataSync(); 
       
-      const predictions = Array.from(data)
+      const dataArr = Array.from(data) as number[];
+      const maxVal = Math.max(...dataArr);
+      const minVal = Math.min(...dataArr);
+      console.log(`[ML Pipeline] Tensor data length: ${data.length}, Min: ${minVal}, Max: ${maxVal}`);
+      
+      // Some TFLite models output logits (raw values), which we might need to softmax.
+      // But typically MobileNet outputs probabilities if it has a softmax layer. Let's check max value.
+      let probabilities = dataArr;
+      if (maxVal > 1.5 || minVal < -0.5) {
+         // Apply softmax
+         const exps = probabilities.map(x => Math.exp(x - maxVal));
+         const sumExps = exps.reduce((a, b) => a + b, 0);
+         probabilities = exps.map(e => e / sumExps);
+      }
+      
+      const predictions = probabilities
         .map((score, index) => ({
           label: this.labels[index] || `Unknown (${index})`,
-          score: Math.max(0, Math.min(1, Number(score) / 255.0)) 
+          score: Math.max(0, Math.min(1, Number(score))) 
         }))
         .sort((a: any, b: any) => b.score - a.score)
         .slice(0, 5); 
+
 
       return predictions;
     });
