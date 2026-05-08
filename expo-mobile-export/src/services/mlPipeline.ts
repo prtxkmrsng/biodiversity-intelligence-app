@@ -72,7 +72,7 @@ export class MLPipeline {
     // Filter Top K predictions
     const top5 = probabilities
       .map((score: number, index: number) => ({ label: LABELS[index] || `Unknown_${index}`, score }))
-      .sort((a: any, b: any) => b.score - a.score)
+      .sort((a: { label: string; score: number }, b: { label: string; score: number }) => b.score - a.score)
       .slice(0, 5);
 
     // Prevent memory leaks on device

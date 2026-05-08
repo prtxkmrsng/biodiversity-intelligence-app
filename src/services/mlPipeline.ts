@@ -94,7 +94,7 @@ export class MLPipeline {
           label: this.labels[index] || `Unknown (${index})`,
           score: Math.max(0, Math.min(1, Number(score))) 
         }))
-        .sort((a: any, b: any) => b.score - a.score)
+        .sort((a: { label: string; score: number }, b: { label: string; score: number }) => b.score - a.score)
         .slice(0, 5); 
 
 
